@@ -22,6 +22,8 @@ and let Claude extract the JSON payload and call the Keycloak Admin REST API for
 
 ## 1. How to Start the App
 
+> Requires **Python 3.10 or later** (`match/case` syntax is used in `agent.py`).
+
 ### Development (logs to console)
 
 ```bash
@@ -44,11 +46,12 @@ uvicorn asgi:app --host 0.0.0.0 --port 8000 --workers 1 --log-level debug
 
 ## Critical Questions
 
-``` 
-How does this command : uvicorn asgi:app --host 0.0.0.0 --port 8000 --workers 1 --log-level debug find and run the main.py if asgi.py is this 
+```
+How does this command: uvicorn asgi:app --host 0.0.0.0 --port 8000 --workers 1 --log-level debug
+find and run main.py if asgi.py is this?
 ```
 
-``` 
+```python
 """
 ASGI entrypoint — mirrors the wsgi.py pattern used in the Flask Orders API.
 
@@ -74,7 +77,7 @@ from app.main import app  # noqa: E402  (import after env load is intentional)
 __all__ = ["app"]
 ```
 
-Great question. The answer is in this one line:
+The answer is in this one line:
 
 ```python
 from app.main import app
@@ -132,6 +135,9 @@ uvicorn command
 ```
 
 The critical insight is that `from app.main import app` does **not** mean "go run main.py later when a request comes in." It means "run main.py right now, at import time, and give me the object named `app` that it created." The `.env` load happens one line earlier, which is the entire reason `asgi.py` exists as a separate file.
+
+---
+
 ## 2. Project Layout
 
 ```
@@ -191,14 +197,14 @@ Start here if you want to understand the whole project from the ground up.
 
 | File | What to look for |
 |------|-----------------|
-| `app/auth.py` | `generate_pkce_pair()` — creates `code_verifier` / `code_challenge`. `GET /auth/login` — builds the Keycloak redirect URL and writes state + verifier to session. `GET /auth/callback` — verifies state, exchanges code for tokens, fetches userinfo, writes `session["user"]`. `require_auth()` — FastAPI `Depends()` guard used on `/api/chat`. |
+| `app/auth.py` | `generate_pkce_pair()` — creates `code_verifier` / `code_challenge`. `GET /auth/login` — builds the Keycloak redirect URL and packs state + verifier into a signed token. `GET /auth/callback` — verifies signed state token, exchanges code for tokens, fetches userinfo, writes `session["user"]`. `require_auth()` — FastAPI `Depends()` guard used on `/api/chat`. |
 
 ### Pass 5 — The AI pipeline (how a message is processed)
 
 | File | What to look for |
 |------|-----------------|
 | `app/agent.py` | `SYSTEM_PROMPT` — the exact instructions Claude receives. `AgentState` TypedDict — the state dict that flows through all three nodes. `parse_intent_node` → `execute_api_node` → `format_response_node`. `_dispatch()` — `match/case` that maps intent strings to `keycloak_admin` methods. `build_graph()` — wires the three nodes linearly. `run_agent()` — the single public function called by `main.py`. |
-| `app/keycloak_client.py` | `_get_admin_token()` — ROPC grant against `master` realm, token cached with 30s safety buffer. `_request()` — attaches Bearer token, handles JSON/text responses. Every public method is a one-liner wrapper over `_request()`. |
+| `app/keycloak_client.py` | `_get_admin_token()` — client credentials grant against `master` realm, token cached with 30s safety buffer. `_request()` — attaches Bearer token, handles JSON/text responses. Every public method is a one-liner wrapper over `_request()`. |
 
 ### Pass 6 — UI (what the user sees)
 
@@ -244,25 +250,25 @@ Browser → GET /auth/login
 ```
 
 **Step 1 — `/auth/login` runs**
-- A random `state` nonce is generated and stored in the session cookie
 - `generate_pkce_pair()` creates:
-  - `code_verifier` — a 64-byte random URL-safe string, stored in session
+  - `code_verifier` — a 64-byte random URL-safe string
   - `code_challenge` — `BASE64URL(SHA256(verifier))`, sent to Keycloak
-- Browser is 302-redirected to Keycloak's `/auth` endpoint with `code_challenge_method=S256`
+- Both are packed into a **signed `state` token** via `itsdangerous.URLSafeTimedSerializer`
+  (expires in 300 seconds — the verifier travels in the URL, not the session cookie)
+- Browser is 302-redirected to Keycloak's `/auth` endpoint with `state=<signed_token>` and `code_challenge_method=S256`
 
 **Step 2 — User authenticates at Keycloak**
 - Keycloak shows its login page
 - On success, Keycloak 302-redirects to `APP_BASE_URL/auth/callback?code=...&state=...`
 
 **Step 3 — `/auth/callback` runs**
-- `state` is verified against the session value (CSRF protection)
-- `code_verifier` is read from the session
+- `parse_state_token(state)` verifies the HMAC signature and 300s expiry → recovers `code_verifier`
 - An async `httpx.post` to Keycloak's token endpoint sends `code` + `code_verifier`
 - **No `client_secret` is sent** — this is a public PKCE client; the verifier is the proof
 - Keycloak returns `access_token`, `refresh_token`, `id_token`
 - A second async `httpx.get` fetches userinfo using the access token
 - `session["user"]` is written: `{sub, username, email, name, roles}`
-- Browser is 302-redirected to `/chat`
+- An HTML page with a 1-second redirect is returned (bare `302` would race against `Set-Cookie`)
 
 **Step 4 — `/chat` is served**
 - `session["user"]` is read and passed to `chat.html` as a template variable
@@ -305,7 +311,7 @@ User types: "Create a user alice@example.com with first name Alice, last name Sm
 
 **Step 5 — Node 2: `execute_api_node`**
 - `_dispatch("create_user", payload, None)` calls `keycloak_admin.create_user(payload)`
-- `_get_admin_token()` authenticates to `master` realm via ROPC (cached for ~5 min)
+- `_get_admin_token()` authenticates to `master` realm via client credentials grant (cached for ~5 min)
 - `_request("POST", "/users", json=payload)` sends:
 ```
 POST {KEYCLOAK_URL}/admin/realms/{KEYCLOAK_REALM}/users
@@ -406,9 +412,19 @@ APP_DEBUG=false
 2. **Email verified: ON**
 3. **Credentials tab** → set a non-temporary password
 
-> Create a confidential client `keycloak-chatbot-backend` in the `master` realm.
-> Enable Service accounts roles. Assign realm-management → realm-admin to its
-> service account. Copy the secret from the Credentials tab into .env.
+### Create the backend admin client (master realm)
+
+> ⚠️ Without this step every chat message will fail with a 401 from the Keycloak Admin API.
+
+1. Switch to the **master** realm (top-left dropdown)
+2. **Clients → Create client**
+3. Client type: **OpenID Connect**
+4. Client ID: `keycloak-chatbot-backend`
+5. **Client authentication: ON** (this makes it a confidential client)
+6. Standard flow: **OFF** | Direct access grants: **OFF** | Service accounts roles: **ON**
+7. Save
+8. **Credentials tab** → copy the secret → paste into `.env` as `KEYCLOAK_ADMIN_CLIENT_SECRET`
+9. **Service accounts roles tab** → **Assign role** → filter by client `realm-management` → assign **realm-admin**
 
 ---
 
@@ -424,8 +440,8 @@ pip install -r requirements.txt
 |---------|------|
 | `fastapi` | Web framework — routes, dependency injection, request/response models |
 | `uvicorn[standard]` | ASGI server that runs the FastAPI app |
-| `starlette` | `SessionMiddleware` for signed cookie sessions |
-| `itsdangerous` | Signs the session cookie (used internally by Starlette) |
+| `starlette` | `SessionMiddleware` for signed cookie sessions (installed automatically with FastAPI, pinned explicitly for version stability) |
+| `itsdangerous` | Signs the PKCE state token in `auth.py` and the session cookie |
 | `python-dotenv` | Loads `.env` in `asgi.py` / `run.py` before any app code runs |
 | `pydantic-settings` | Typed config via `Settings` class reading from environment variables |
 | `httpx` | Async HTTP client used by `auth.py` (token exchange) and `keycloak_client.py` |
