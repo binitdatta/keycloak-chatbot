@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Why KeycloakAI — The Problem We Solve</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --ink:       #0f1117;
+      --ink-soft:  #3a3f4b;
+      --ink-mute:  #6b7280;
+      --rule:      #e5e7eb;
+      --surface:   #f9fafb;
+      --white:     #ffffff;
+      --accent:    #0d6efd;
+      --accent-dk: #0a58ca;
+      --red:       #dc2626;
+      --amber:     #d97706;
+      --green:     #16a34a;
+      --code-bg:   #0f1117;
+      --code-fg:   #20c997;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background: var(--white);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Typography ─────────────────────────────────────── */
+    .syne { font-family: 'Syne', sans-serif; }
+    .mono { font-family: 'DM Mono', monospace; }
+
+    h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
+
+    /* ── Navbar ─────────────────────────────────────────── */
+    .navbar { font-family: 'DM Sans', sans-serif; font-size: 0.9rem; }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .why-hero {
+      background: var(--ink);
+      color: #fff;
+      padding: 80px 0 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .why-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 50%, rgba(13,110,253,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 30% 40% at 10% 80%, rgba(32,201,151,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--code-fg);
+      margin-bottom: 1.2rem;
+    }
+    .hero-headline {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+    .hero-headline em {
+      font-style: normal;
+      color: var(--code-fg);
+    }
+    .hero-sub {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.65);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+    .hero-stat-row {
+      display: flex;
+      gap: 40px;
+      margin-top: 48px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
+    }
+    .hero-stat-label {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+    .hero-stat-accent { color: var(--code-fg); }
+
+    /* ── Section labels ─────────────────────────────────── */
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── Timeline / Steps ───────────────────────────────── */
+    .timeline { position: relative; padding-left: 0; }
+    .tl-step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 0 24px;
+      margin-bottom: 0;
+    }
+    .tl-spine {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .tl-node {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .tl-node-problem {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+      color: var(--red);
+    }
+    .tl-line {
+      width: 2px;
+      flex: 1;
+      min-height: 24px;
+      background: var(--rule);
+    }
+    .tl-content { padding: 0 0 40px 0; }
+    .tl-content:last-child { padding-bottom: 0; }
+
+    /* Problem cards */
+    .problem-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-left: 4px solid var(--red);
+      border-radius: 0 10px 10px 0;
+      padding: 20px 22px;
+      transition: box-shadow 0.2s;
+    }
+    .problem-card:hover { box-shadow: 0 4px 20px rgba(220,38,38,0.08); }
+    .problem-card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .problem-card-body {
+      font-size: 0.875rem;
+      color: var(--ink-soft);
+      line-height: 1.65;
+      margin: 0;
+    }
+    .problem-quote {
+      display: block;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: #fef2f2;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #b91c1c;
+      font-style: italic;
+    }
+
+    /* ── Persona cards ──────────────────────────────────── */
+    .persona-band {
+      background: var(--surface);
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 56px 0;
+    }
+    .persona-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 24px;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .persona-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+    .persona-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .persona-card.ops::before   { background: linear-gradient(90deg, #dc2626, #f97316); }
+    .persona-card.cust::before  { background: linear-gradient(90deg, #d97706, #eab308); }
+    .persona-card.rd::before    { background: linear-gradient(90deg, #7c3aed, #0d6efd); }
+    .persona-avatar {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 14px;
+    }
+    .persona-avatar.ops  { background: #fef2f2; }
+    .persona-avatar.cust { background: #fffbeb; }
+    .persona-avatar.rd   { background: #eff6ff; }
+    .persona-role {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 4px;
+    }
+    .persona-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+    .persona-pain {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+    .pain-tag {
+      display: inline-block;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-family: 'DM Mono', monospace;
+      margin: 2px 2px 2px 0;
+    }
+
+    /* ── Solution steps ─────────────────────────────────── */
+    .solution-step {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 0 20px;
+      margin-bottom: 32px;
+    }
+    .sol-node {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .sol-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .sol-body {
+      font-size: 0.875rem;
+      color: var(--ink-soft);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* ── Before / After ─────────────────────────────────── */
+    .ba-section { padding: 72px 0; }
+    .ba-card {
+      border-radius: 14px;
+      overflow: hidden;
+      height: 100%;
+    }
+    .ba-card-before {
+      background: #0f1117;
+      border: 1px solid #1f2937;
+    }
+    .ba-card-after {
+      background: #0f1117;
+      border: 1px solid rgba(13,110,253,0.4);
+      box-shadow: 0 0 40px rgba(13,110,253,0.12);
+    }
+    .ba-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+    }
+    .ba-header-before { color: #ef4444; }
+    .ba-header-after  { color: #20c997; }
+    .ba-body { padding: 20px; font-family: 'DM Mono', monospace; font-size: 0.78rem; line-height: 1.9; }
+    .ba-line-bad  { color: #ef4444; }
+    .ba-line-dim  { color: #4b5563; }
+    .ba-line-good { color: #20c997; }
+    .ba-line-neutral { color: #9ca3af; }
+    .ba-prompt {
+      background: rgba(13,110,253,0.15);
+      border: 1px solid rgba(13,110,253,0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #93c5fd;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-style: italic;
+    }
+    .ba-response {
+      background: rgba(32,201,151,0.08);
+      border: 1px solid rgba(32,201,151,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #6ee7b7;
+      font-size: 0.78rem;
+      font-family: 'DM Mono', monospace;
+      line-height: 1.7;
+    }
+
+    /* ── Cost section ───────────────────────────────────── */
+    .cost-section {
+      background: var(--surface);
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 72px 0;
+    }
+    .cost-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      padding: 28px;
+      height: 100%;
+      text-align: center;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .cost-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+    .cost-icon {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .cost-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2.2rem;
+      line-height: 1;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+    .cost-unit {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--ink-mute);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .cost-desc {
+      font-size: 0.83rem;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+
+    /* ── Flow diagram ───────────────────────────────────── */
+    .flow-section { padding: 72px 0; }
+    .flow-box {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 16px 20px;
+      background: var(--white);
+      text-align: center;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .flow-box:hover { border-color: var(--accent); }
+    .flow-box-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 4px;
+    }
+    .flow-box-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-mute);
+      font-size: 1.4rem;
+      padding: 0 4px;
+    }
+    .flow-box.highlight {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .flow-box.highlight .flow-box-label { color: rgba(255,255,255,0.6); }
+    .flow-box.highlight .flow-box-title { color: #fff; }
+
+    /* ── CTA ────────────────────────────────────────────── */
+    .why-cta {
+      background: var(--ink);
+      color: #fff;
+      padding: 80px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .why-cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 50% 80% at 50% 100%, rgba(13,110,253,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .why-cta h2 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .why-cta p { color: rgba(255,255,255,0.6); font-size: 1.05rem; max-width: 500px; margin: 0 auto 2rem; }
+
+    /* ── Verdict banner ─────────────────────────────────── */
+    .verdict {
+      background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 36px 40px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .verdict-icon { font-size: 2.4rem; flex-shrink: 0; }
+    .verdict-text { font-size: 0.95rem; line-height: 1.7; opacity: 0.9; }
+    .verdict-headline {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+    }
+
+    /* ── Animations ─────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.6s ease forwards; }
+    .fade-up-1 { animation-delay: 0.1s; opacity: 0; }
+    .fade-up-2 { animation-delay: 0.25s; opacity: 0; }
+    .fade-up-3 { animation-delay: 0.4s; opacity: 0; }
+
+    /* ── Misc ───────────────────────────────────────────── */
+    .divider-label {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 56px 0 40px;
+      color: var(--ink-mute);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .divider-label::before,
+    .divider-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    .tag-chip {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 100px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--ink-soft);
+      margin: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar — identical to CS app ── -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="/">KeycloakAI</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="topNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+       <li class="nav-item"><a class="nav-link active" href="/">Why KeycloakAI</a></li>
+        <li class="nav-item"><a class="nav-link" href="/features#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link" href="/features#capabilities">Capabilities</a></li>
+        <li class="nav-item"><a class="nav-link" href="/features#stack">Stack</a></li>
+      </ul>
+    <ul class="navbar-nav ms-auto">
+        {% if user %}
+          <li class="nav-item d-flex align-items-center me-2">
+            <span class="navbar-text small text-light">{{ user.name or user.username }}</span>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-primary btn-sm ms-2" href="/chat">
+              <i class="bi bi-chat-dots me-1"></i>Open Chat
+            </a>
+          </li>
+          <li class="nav-item ms-2">
+            <a class="nav-link" href="/auth/logout">Logout</a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="/auth/login">Login</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════ -->
+<section class="why-hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <div class="hero-eyebrow fade-up fade-up-1">// Five years in production · 400+ customers · 1000+ installations</div>
+        <h1 class="hero-headline fade-up fade-up-2">
+          Keycloak is powerful.<br/>
+          Configuring it is<br/>
+          <em>brutal.</em>
+        </h1>
+        <p class="hero-sub fade-up fade-up-3">
+          We lived this problem for five years. Operations teams drowning in tabs.
+          Customers lost in jargon. R&amp;D engineers pulled away from product work
+          to babysit SSO configuration. This is the story of that pain — and the fix.
+        </p>
+        <div class="hero-stat-row fade-up fade-up-3">
+          <div>
+            <div class="hero-stat-num">400<span class="hero-stat-accent">+</span></div>
+            <div class="hero-stat-label">customers</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">1,000<span class="hero-stat-accent">+</span></div>
+            <div class="hero-stat-label">KC installations</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">~3<span class="hero-stat-accent">hrs</span></div>
+            <div class="hero-stat-label">avg config time</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">$0<span class="hero-stat-accent"></span></div>
+            <div class="hero-stat-label">features shipped during outages</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block">
+        <!-- Illustrative terminal showing the "old way" -->
+        <div style="background:#111315; border:1px solid rgba(255,255,255,0.08); border-radius:12px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+          <div style="background:#1a1d20; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:8px;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+            <span style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
+            <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+            <span style="margin-left:8px; font-family:'DM Mono',monospace; font-size:0.72rem; color:#4b5563;">Keycloak Admin UI — Client Configuration</span>
+          </div>
+          <div style="padding:20px; font-family:'DM Mono',monospace; font-size:0.75rem; line-height:2;">
+            <div style="color:#374151; margin-bottom:4px;">// Tab 1 of 7: Settings</div>
+            <div style="color:#ef4444;">❌ Valid Redirect URIs — what goes here?</div>
+            <div style="color:#ef4444;">❌ Web Origins — is this the same as CORS?</div>
+            <div style="color:#4b5563;">// Tab 2: Keys</div>
+            <div style="color:#f97316;">⚠  JWKS URL — customer doesn't have one</div>
+            <div style="color:#4b5563;">// Tab 3: Advanced</div>
+            <div style="color:#ef4444;">❌ Proof Key for Code Exchange — ???</div>
+            <div style="color:#ef4444;">❌ OAuth 2.0 Token Binding — skip?</div>
+            <div style="color:#4b5563;">// Tab 4: Mappers</div>
+            <div style="color:#9ca3af;">→ Customer filed ticket 3 days ago.</div>
+            <div style="color:#9ca3af;">→ R&amp;D engineer is on a Zoom call.</div>
+            <div style="color:#9ca3af;">→ Feature sprint is paused.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     PROBLEM TIMELINE
+══════════════════════════════════════════════════ -->
+<main class="container py-5">
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+
+      <div class="divider-label">The Problem Space</div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-md-8">
+          <h2 class="syne fw-800 fs-2 mb-2" style="letter-spacing:-0.02em;">
+            Five distinct failure modes.<br/>One common root cause.
+          </h2>
+          <p class="text-secondary">
+            After five years running Keycloak at scale, the same breakdowns appeared repeatedly
+            across every customer type — startup, enterprise, and everything in between.
+            The tool is powerful. The surface area is immense. And the gap between
+            "I need SSO" and "SSO is configured correctly" is enormous.
+          </p>
+        </div>
+        <div class="col-md-4 d-flex align-items-center">
+          <div>
+            <div class="tag-chip">Client Configuration</div>
+            <div class="tag-chip">Identity Providers</div>
+            <div class="tag-chip">PKCE / OIDC</div>
+            <div class="tag-chip">Role Mappings</div>
+            <div class="tag-chip">Protocol Mappers</div>
+            <div class="tag-chip">Realm Settings</div>
+            <div class="tag-chip">User Federation</div>
+            <div class="tag-chip">Token Lifetimes</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline of problems -->
+      <div class="timeline">
+
+        <!-- Problem 1 -->
+        <div class="tl-step">
+          <div class="tl-spine">
+            <div class="tl-node tl-node-problem">01</div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="problem-card">
+              <div class="problem-card-title">The UI has 7 tabs per client. Customers don't know which ones matter.</div>
+              <p class="problem-card-body">
+                Keycloak's client configuration UI presents Settings, Keys, Credentials, Roles, Client Scopes, Mappers,
+                and Advanced tabs simultaneously. For a non-security engineer trying to configure a React SPA for SSO,
+                every field is a potential landmine. "Valid Redirect URIs", "Web Origins", "Root URL", "Admin URL" —
+                similar names, radically different implications. A single trailing slash in the wrong field causes a
+                redirect URI mismatch error that surfaces as a cryptic OAuth error in the browser.
+              </p>
+              <span class="problem-quote">
+                "I spent 4 hours on a redirect URI mismatch. Turned out I had a trailing slash."
+                — Operations engineer, customer onboarding call
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 2 -->
+        <div class="tl-step">
+          <div class="tl-spine">
+            <div class="tl-node tl-node-problem">02</div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="problem-card">
+              <div class="problem-card-title">Identity Provider configuration requires deep OIDC / SAML knowledge most customers don't have.</div>
+              <p class="problem-card-body">
+                Connecting a corporate IdP — Azure AD, Okta, PingFederate — requires the operator to correctly
+                supply Issuer URL, Authorization URL, Token URL, JWKS URL, Client ID, Client Secret, and then
+                configure mappers for the claims the IdP actually returns. Each IdP names its claims differently.
+                Azure uses <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px;font-size:0.8em;">upn</code> where Okta uses <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px;font-size:0.8em;">email</code>.
+                Getting this wrong means users authenticate successfully at the IdP but arrive at the application
+                with no name, no email, and no roles — a silent, baffling failure.
+              </p>
+              <span class="problem-quote">
+                "Authentication worked. Login didn't. Spent 2 days figuring out the claim mapper was wrong."
+                — Enterprise customer, SAML integration
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 3 -->
+        <div class="tl-step">
+          <div class="tl-spine">
+            <div class="tl-node tl-node-problem">03</div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="problem-card">
+              <div class="problem-card-title">Heavy Java automation covered the happy path. Edge cases still required manual intervention.</div>
+              <p class="problem-card-body">
+                The team built sophisticated Java automation: realm creation scripts, default client templates,
+                role hierarchies provisioned on signup. This handled 80% of setups. The remaining 20% — custom
+                attribute mappers, non-standard SAML configurations, client-specific scope overrides — required
+                a human being to click through the UI. That human was always an R&amp;D engineer because operations
+                didn't have the Keycloak depth to do it safely. The automation created a false confidence:
+                "the standard setup works, so any deviation is someone else's problem."
+              </p>
+              <span class="problem-quote">
+                "Our automation was great until a customer needed a custom SAML attribute mapper. Then it was a war."
+                — R&amp;D engineer
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 4 -->
+        <div class="tl-step">
+          <div class="tl-spine">
+            <div class="tl-node tl-node-problem">04</div>
+            <div class="tl-line"></div>
+          </div>
+          <div class="tl-content">
+            <div class="problem-card">
+              <div class="problem-card-title">R&amp;D engineers became the Keycloak support desk — at the cost of product velocity.</div>
+              <p class="problem-card-body">
+                Every escalated Keycloak configuration issue pulled an R&amp;D engineer out of the sprint.
+                A typical incident looked like this: customer opens a ticket at 2pm, operations triages it
+                and determines it needs Keycloak access, tickets R&amp;D, R&amp;D engineer picks it up after standup
+                next morning, joins a Zoom call, screen-shares Keycloak UI, makes the change, closes the ticket.
+                Total elapsed time: 18–24 hours. Total R&amp;D time lost: 2–3 hours including context switch cost.
+                Multiply by 400 customers. The math is brutal.
+              </p>
+              <span class="problem-quote">
+                "I didn't ship a feature for two weeks during the Q4 enterprise onboarding wave. Just Keycloak."
+                — Senior engineer, product team
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problem 5 -->
+        <div class="tl-step">
+          <div class="tl-spine">
+            <div class="tl-node tl-node-problem">05</div>
+          </div>
+          <div class="tl-content">
+            <div class="problem-card">
+              <div class="problem-card-title">Keycloak documentation is comprehensive. It is also 400 pages long and assumes prior knowledge.</div>
+              <p class="problem-card-body">
+                The official Keycloak documentation is genuinely excellent — for someone who already understands
+                OAuth 2.0, OIDC, SAML 2.0, and JWT internals. For an operations engineer onboarding their tenth
+                enterprise customer of the quarter, "see RFC 7636 for the PKCE specification" is not helpful.
+                The knowledge gap isn't about intelligence — it's about domain depth that takes years to accumulate.
+                No operations team should need to read RFC 7636 to configure a client application.
+              </p>
+              <span class="problem-quote">
+                "I know how to operate software. I don't know what a code_challenge_method is and I shouldn't have to."
+                — Operations team lead
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /timeline -->
+
+    </div>
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════
+     PERSONAS
+══════════════════════════════════════════════════ -->
+<section class="persona-band">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="section-label mb-2">Who carries this burden</div>
+        <h2 class="syne fw-800 fs-2 mb-4" style="letter-spacing:-0.02em;">Three roles. Three different kinds of pain.</h2>
+        <div class="row g-3">
+
+          <div class="col-md-4">
+            <div class="persona-card ops h-100">
+              <div class="persona-avatar ops">👩‍💼</div>
+              <div class="persona-role">Operations</div>
+              <div class="persona-name">The Onboarding Engineer</div>
+              <p class="persona-pain">
+                Responsible for getting enterprise customers live. Knows the product deeply
+                but not Keycloak internals. Has to file R&amp;D tickets for anything beyond
+                the standard setup template. Blocked waiting. Customer is frustrated.
+              </p>
+              <div class="mt-3">
+                <span class="pain-tag">ticket backlog</span>
+                <span class="pain-tag">UI confusion</span>
+                <span class="pain-tag">waiting on R&amp;D</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="persona-card cust h-100">
+              <div class="persona-avatar cust">🏢</div>
+              <div class="persona-role">Customer IT</div>
+              <div class="persona-name">The Enterprise IT Admin</div>
+              <p class="persona-pain">
+                Needs SSO integrated with their Azure AD or Okta. Has the IdP credentials.
+                Doesn't know what "Issuer URL" means in the Keycloak context.
+                Opens a ticket. Waits. Escalates. The integration takes a week
+                instead of an afternoon.
+              </p>
+              <div class="mt-3">
+                <span class="pain-tag">jargon overload</span>
+                <span class="pain-tag">slow time-to-value</span>
+                <span class="pain-tag">trust erosion</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="persona-card rd h-100">
+              <div class="persona-avatar rd">👨‍💻</div>
+              <div class="persona-role">R&amp;D Engineering</div>
+              <div class="persona-name">The Feature Developer</div>
+              <p class="persona-pain">
+                Pulled off the product roadmap to debug a SAML mapper.
+                Has the Keycloak depth to fix it in 20 minutes — but the
+                context switch costs the rest of the day. Repeat across
+                the enterprise onboarding wave. Sprint velocity collapses.
+              </p>
+              <div class="mt-3">
+                <span class="pain-tag">context switching</span>
+                <span class="pain-tag">lost sprint velocity</span>
+                <span class="pain-tag">support work ≠ features</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     BEFORE / AFTER
+══════════════════════════════════════════════════ -->
+<section class="ba-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+
+        <div class="section-label mb-2">Before &amp; After</div>
+        <h2 class="syne fw-800 fs-2 mb-2" style="letter-spacing:-0.02em;">Same task. Radically different experience.</h2>
+        <p class="text-secondary mb-5">Configuring a Google Identity Provider. The most common enterprise request.</p>
+
+        <div class="row g-4">
+          <!-- BEFORE -->
+          <div class="col-md-6">
+            <div class="ba-card ba-card-before h-100">
+              <div class="ba-header ba-header-before">
+                <i class="bi bi-x-circle-fill"></i>
+                Before KeycloakAI — Manual Process
+              </div>
+              <div class="ba-body">
+                <div class="ba-line-dim">// Step 1: Find the right realm</div>
+                <div class="ba-line-neutral">Admin UI → Realms → chatbot-test</div>
+                <div class="ba-line-dim">// Step 2: Navigate to Identity Providers</div>
+                <div class="ba-line-neutral">Left nav → Identity Providers → Add provider</div>
+                <div class="ba-line-dim">// Step 3: Configure Google</div>
+                <div class="ba-line-bad">❌ Client ID — where do I get this?</div>
+                <div class="ba-line-bad">❌ Client Secret — Google Cloud Console?</div>
+                <div class="ba-line-bad">❌ Default Scopes — what scopes does Google use?</div>
+                <div class="ba-line-bad">❌ Hosted Domain — needed? optional?</div>
+                <div class="ba-line-dim">// Step 4: Configure Mappers</div>
+                <div class="ba-line-bad">❌ Attribute Importer — email? sub? preferred_username?</div>
+                <div class="ba-line-bad">❌ Hardcoded Role Mapper — do I need this?</div>
+                <div class="ba-line-dim">// Step 5: Test</div>
+                <div class="ba-line-bad">❌ Error: invalid_client</div>
+                <div class="ba-line-bad">❌ File R&amp;D ticket</div>
+                <div class="ba-line-bad">❌ Wait 24 hours</div>
+                <div style="border-top:1px solid #1f2937; margin-top:14px; padding-top:12px;">
+                  <div style="color:#6b7280; font-size:0.72rem;">Elapsed time: <span style="color:#ef4444;">3–5 hours + R&amp;D escalation</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTER -->
+          <div class="col-md-6">
+            <div class="ba-card ba-card-after h-100">
+              <div class="ba-header ba-header-after">
+                <i class="bi bi-check-circle-fill"></i>
+                After KeycloakAI — Natural Language
+              </div>
+              <div class="ba-body">
+                <div class="ba-prompt">
+                  "Create a Google identity provider with client ID 123456.apps.googleusercontent.com
+                  and client secret mysecret. Enable email sync."
+                </div>
+                <div class="ba-response">
+✅ Google Identity Provider created<br/><br/>
+POST /admin/realms/chatbot-test/<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;identity-provider/instances<br/><br/>
+{<br/>
+&nbsp;"alias": "google",<br/>
+&nbsp;"providerId": "google",<br/>
+&nbsp;"enabled": true,<br/>
+&nbsp;"config": {<br/>
+&nbsp;&nbsp;"clientId": "123456.apps...",<br/>
+&nbsp;&nbsp;"clientSecret": "mysecret",<br/>
+&nbsp;&nbsp;"defaultScope": "openid email profile",<br/>
+&nbsp;&nbsp;"syncMode": "IMPORT"<br/>
+&nbsp;}<br/>
+}<br/><br/>
+HTTP 201 Created
+                </div>
+                <div style="border-top:1px solid rgba(255,255,255,0.06); margin-top:14px; padding-top:12px;">
+                  <div style="color:#6b7280; font-size:0.72rem;">Elapsed time: <span style="color:#20c997;">~8 seconds</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     COST OF THE PROBLEM
+══════════════════════════════════════════════════ -->
+<section class="cost-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="section-label mb-2">The real cost</div>
+        <h2 class="syne fw-800 fs-2 mb-2" style="letter-spacing:-0.02em;">What manual Keycloak management actually costs.</h2>
+        <p class="text-secondary mb-5">These aren't theoretical numbers. They're conservative estimates from 5 years of running this at scale.</p>
+        <div class="row g-3">
+
+          <div class="col-6 col-md-3">
+            <div class="cost-card">
+              <span class="cost-icon">⏱️</span>
+              <div class="cost-num">3h</div>
+              <div class="cost-unit">avg per config task</div>
+              <p class="cost-desc">Average time for a non-expert to configure a custom client or IdP from scratch, including back-and-forth.</p>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="cost-card">
+              <span class="cost-icon">🔧</span>
+              <div class="cost-num">40%</div>
+              <div class="cost-unit">of tickets escalated</div>
+              <p class="cost-desc">Of Keycloak-related support tickets required R&amp;D engineer involvement beyond standard templates.</p>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="cost-card">
+              <span class="cost-icon">📉</span>
+              <div class="cost-num">2 days</div>
+              <div class="cost-unit">lost per sprint</div>
+              <p class="cost-desc">During peak onboarding periods, R&amp;D engineers lost an average of 2 days per sprint to Keycloak support work.</p>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="cost-card">
+              <span class="cost-icon">😤</span>
+              <div class="cost-num">24h</div>
+              <div class="cost-unit">customer wait time</div>
+              <p class="cost-desc">Average time from customer filing a Keycloak configuration ticket to resolution — a full business day.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     HOW KEYCLOAKAI SOLVES IT
+══════════════════════════════════════════════════ -->
+<section class="flow-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+
+        <div class="section-label mb-2">The Solution</div>
+        <h2 class="syne fw-800 fs-2 mb-2" style="letter-spacing:-0.02em;">KeycloakAI collapses the expertise gap.</h2>
+        <p class="text-secondary mb-5">
+          The insight is simple: Keycloak's Admin REST API is well-defined and deterministic.
+          The only hard part is knowing which endpoint to call, with what payload, in what order.
+          That is exactly what an LLM is good at.
+        </p>
+
+        <!-- Solution steps -->
+        <div class="row g-4 mb-5">
+          <div class="col-md-6">
+            <div class="solution-step">
+              <div class="sol-node"><i class="bi bi-shield-lock"></i></div>
+              <div>
+                <div class="sol-title">SSO-secured — only authorised users can act</div>
+                <p class="sol-body">Every session is authenticated through Keycloak itself via OIDC PKCE. The tool that manages Keycloak is protected by Keycloak. No credentials stored, no shared passwords.</p>
+              </div>
+            </div>
+            <div class="solution-step">
+              <div class="sol-node"><i class="bi bi-translate"></i></div>
+              <div>
+                <div class="sol-title">Natural language in — structured API call out</div>
+                <p class="sol-body">Claude parses the English intent and extracts the exact JSON payload the Admin REST API expects. No UI. No tabs. No jargon. "Create a Google IdP with these credentials" becomes a correct API call in under a second.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="solution-step">
+              <div class="sol-node"><i class="bi bi-eye"></i></div>
+              <div>
+                <div class="sol-title">Full transparency — every payload shown</div>
+                <p class="sol-body">Every operation displays the exact JSON that was sent and the HTTP response code received. Nothing is hidden. Operations engineers learn the API by using the tool — the tool teaches while it works.</p>
+              </div>
+            </div>
+            <div class="solution-step">
+              <div class="sol-node"><i class="bi bi-diagram-3"></i></div>
+              <div>
+                <div class="sol-title">Deterministic pipeline — no hallucinated endpoints</div>
+                <p class="sol-body">LangGraph routes every intent through a typed dispatch table. Claude identifies the intent; Python executes the correct pre-defined API call. The AI cannot invent endpoints or make up parameters.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Flow diagram -->
+        <div class="card shadow-sm border-0 bg-light p-4 mb-5">
+          <div class="section-label mb-3 text-center">Request flow</div>
+          <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
+            <div class="flow-box" style="min-width:130px;">
+              <div class="flow-box-label">Input</div>
+              <div class="flow-box-title">English Prompt</div>
+            </div>
+            <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="flow-box highlight" style="min-width:130px;">
+              <div class="flow-box-label">Claude</div>
+              <div class="flow-box-title">Parse Intent</div>
+            </div>
+            <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="flow-box highlight" style="min-width:130px;">
+              <div class="flow-box-label">LangGraph</div>
+              <div class="flow-box-title">Execute API</div>
+            </div>
+            <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="flow-box" style="min-width:130px;">
+              <div class="flow-box-label">Keycloak</div>
+              <div class="flow-box-title">Admin REST API</div>
+            </div>
+            <div class="flow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="flow-box" style="min-width:130px;">
+              <div class="flow-box-label">Output</div>
+              <div class="flow-box-title">Result + Payload</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verdict -->
+        <div class="verdict">
+          <div class="verdict-icon">💡</div>
+          <div>
+            <div class="verdict-headline">The expertise stays in the system, not in a person's head.</div>
+            <p class="verdict-text mb-0">
+              The deepest insight from five years running this: Keycloak configuration knowledge is high-value,
+              hard to transfer, and concentrated in very few people. Every time that knowledge lives only in
+              an engineer's memory, it creates a bottleneck. KeycloakAI encodes that knowledge into the tool —
+              so operations teams, customers, and new engineers can all act without the expert being in the room.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     CTA
+══════════════════════════════════════════════════ -->
+<section class="why-cta">
+  <div class="container position-relative">
+    <div class="hero-eyebrow" style="justify-content:center;display:flex;">// Start using it today</div>
+    <h2 class="syne">Stop losing engineers<br/>to Keycloak configuration.</h2>
+    <p>Sign in with your Keycloak account and start managing your realm through natural language. Operations teams, customers, and engineers all unblocked.</p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="/auth/login" class="btn btn-primary btn-lg fw-semibold">
+        <i class="bi bi-shield-lock-fill me-2"></i>Sign in with Keycloak
+      </a>
+      <a href="/features" class="btn btn-outline-light btn-lg">
+        See all features
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="footer mt-auto py-4 bg-dark text-light border-top">
+  <div class="container">
+    <div class="row gy-4 align-items-start">
+      <div class="col-12 col-md-4">
+        <h6 class="fw-bold">KeycloakAI</h6>
+        <p class="small text-light-emphasis mb-0">
+          An AI-powered Keycloak administration chatbot. Authenticate via SSO,
+          then manage your realm through natural English prompts backed by the live Admin REST API.
+        </p>
+      </div>
+      <div class="col-6 col-md-3">
+        <h6 class="fw-bold">Technology Stack</h6>
+        <ul class="list-unstyled small mb-0">
+          <li>LangChain + LangGraph</li>
+          <li>FastAPI (Python 3.12)</li>
+          <li>Anthropic Claude</li>
+          <li>Keycloak (OIDC PKCE)</li>
+        </ul>
+      </div>
+      <div class="col-6 col-md-3">
+        <h6 class="fw-bold">Quick Links</h6>
+        <ul class="list-unstyled small mb-0">
+          <li><a href="/" class="text-decoration-none text-light">Home</a></li>
+          <li><a href="/features" class="text-decoration-none text-light">Features</a></li>
+          <li><a href="/auth/login" class="text-decoration-none text-light">Sign In</a></li>
+          <li><a href="/features#stack" class="text-decoration-none text-light">Stack</a></li>
+        </ul>
+      </div>
+      <div class="col-12 col-md-2">
+        <h6 class="fw-bold">Compatibility</h6>
+        <p class="small mb-0 text-light-emphasis">Keycloak Admin REST API v21+</p>
+      </div>
+    </div>
+    <hr class="border-secondary my-4">
+    <div class="text-center small text-light-emphasis">
+      © 2026 KeycloakAI — Built with LangGraph, Claude &amp; FastAPI.
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

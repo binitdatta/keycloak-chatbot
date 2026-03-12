@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KeycloakAI — Intelligent Realm Administration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --kc-teal: #00e5c3;
+      --kc-blue: #0a84ff;
+      --kc-dark: #080d14;
+      --kc-card: #0e1623;
+      --kc-border: rgba(0,229,195,0.15);
+      --kc-muted: #5a7090;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--kc-dark);
+      color: #cdd9e8;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, .display-font { font-family: 'Syne', sans-serif; }
+
+    /* ── Background mesh ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0,229,195,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(10,132,255,0.08) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: rgba(8,13,20,0.85) !important;
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--kc-border);
+    }
+    .navbar-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--kc-teal) !important;
+      letter-spacing: -0.5px;
+    }
+    .navbar-brand span { color: #fff; }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 92vh;
+      display: flex; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0,229,195,0.1);
+      border: 1px solid rgba(0,229,195,0.3);
+      color: var(--kc-teal);
+      font-size: 0.78rem; font-weight: 600;
+      padding: 6px 14px; border-radius: 999px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .hero-title {
+      font-size: clamp(2.6rem, 6vw, 5rem);
+      font-weight: 800; line-height: 1.08;
+      letter-spacing: -2px;
+      color: #fff;
+      margin-bottom: 1.5rem;
+    }
+    .hero-title .accent { color: var(--kc-teal); }
+    .hero-sub {
+      font-size: 1.15rem; font-weight: 300;
+      color: var(--kc-muted); max-width: 520px;
+      line-height: 1.7; margin-bottom: 2.5rem;
+    }
+    .btn-launch {
+      background: var(--kc-teal);
+      color: #080d14;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1rem;
+      padding: 14px 36px; border-radius: 8px;
+      border: none; transition: all 0.2s;
+      box-shadow: 0 0 30px rgba(0,229,195,0.3);
+    }
+    .btn-launch:hover {
+      background: #00ffdb;
+      box-shadow: 0 0 50px rgba(0,229,195,0.5);
+      transform: translateY(-2px);
+      color: #080d14;
+    }
+    .btn-outline-teal {
+      border: 1px solid var(--kc-border);
+      color: #cdd9e8;
+      padding: 14px 28px; border-radius: 8px;
+      background: transparent;
+      font-size: 1rem; transition: all 0.2s;
+    }
+    .btn-outline-teal:hover {
+      border-color: var(--kc-teal);
+      color: var(--kc-teal);
+      background: rgba(0,229,195,0.05);
+    }
+
+    /* ── Chat preview ── */
+    .chat-preview {
+      background: var(--kc-card);
+      border: 1px solid var(--kc-border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    }
+    .chat-preview-bar {
+      background: rgba(0,0,0,0.3);
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--kc-border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .chat-preview-body { padding: 20px; }
+    .msg-bubble {
+      border-radius: 12px; padding: 10px 14px; font-size: 0.87rem;
+      max-width: 85%; margin-bottom: 10px; line-height: 1.5;
+    }
+    .msg-user {
+      background: rgba(0,229,195,0.12);
+      border: 1px solid rgba(0,229,195,0.2);
+      color: #e0f7f4; margin-left: auto;
+    }
+    .msg-ai {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #cdd9e8;
+    }
+    .msg-code {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 14px;
+      font-family: 'Courier New', monospace; font-size: 0.78rem;
+      color: var(--kc-teal); margin-top: 6px;
+    }
+    .typing-dot {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; background: var(--kc-teal);
+      animation: blink 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+    /* ── Features ── */
+    .section-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--kc-teal);
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 800; letter-spacing: -1px; color: #fff;
+      margin-bottom: 1rem;
+    }
+    .feature-card {
+      background: var(--kc-card);
+      border: 1px solid var(--kc-border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      height: 100%;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(0,229,195,0.4);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      background: rgba(0,229,195,0.1);
+      border: 1px solid rgba(0,229,195,0.2);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: var(--kc-teal);
+      margin-bottom: 1.2rem;
+    }
+    .feature-card h5 { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.6rem; }
+    .feature-card p { font-size: 0.88rem; color: var(--kc-muted); line-height: 1.7; margin: 0; }
+
+    /* ── Capabilities grid ── */
+    .cap-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 10px 16px;
+      font-size: 0.84rem; color: #b0c0d4;
+      transition: all 0.15s;
+    }
+    .cap-pill:hover { border-color: var(--kc-teal); color: var(--kc-teal); }
+    .cap-pill i { color: var(--kc-teal); font-size: 1rem; }
+
+    /* ── Stack section ── */
+    .stack-card {
+      background: var(--kc-card);
+      border: 1px solid var(--kc-border);
+      border-radius: 12px; padding: 20px 24px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .stack-icon { font-size: 1.8rem; }
+    .stack-card h6 { font-weight: 700; color: #fff; margin: 0; font-size: 0.95rem; }
+    .stack-card p { font-size: 0.8rem; color: var(--kc-muted); margin: 0; }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: linear-gradient(135deg, rgba(0,229,195,0.08) 0%, rgba(10,132,255,0.08) 100%);
+      border: 1px solid var(--kc-border);
+      border-radius: 24px; padding: 64px 48px;
+      text-align: center;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--kc-border);
+      color: var(--kc-muted); font-size: 0.82rem;
+    }
+
+    /* ── Animations ── */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      animation: fadeUp 0.7s forwards;
+    }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero { min-height: auto; padding: 80px 0 60px; }
+      .cta-section { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="/static">KeycloakAI<span>.</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+        <li class="nav-item"><a class="nav-link text-secondary" href="#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link text-secondary" href="#capabilities">Capabilities</a></li>
+        <li class="nav-item"><a class="nav-link text-secondary" href="#stack">Stack</a></li>
+        {% if user %}
+        <li class="nav-item">
+          <a class="btn btn-sm btn-launch ms-2" href="/chat">
+            <i class="bi bi-chat-dots me-1"></i>Open Chat
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-sm btn-outline-secondary ms-1" href="/auth/logout">Logout</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="btn btn-sm btn-launch ms-2" href="/auth/login">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Sign in with Keycloak
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero pt-5 mt-5" style="position:relative;z-index:1;">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="hero-badge fade-up delay-1">
+          <i class="bi bi-stars"></i> AI-Powered Realm Management
+        </div>
+        <h1 class="hero-title fade-up delay-2">
+          Administer Keycloak<br/>in <span class="accent">plain English</span>
+        </h1>
+        <p class="hero-sub fade-up delay-3">
+          Authenticate via SSO, then describe what you want — create users, configure clients,
+          set up identity providers — and let Claude extract the JSON and call the Admin REST API for you.
+        </p>
+        <div class="d-flex flex-wrap gap-3 fade-up delay-4">
+          <a href="/auth/login" class="btn btn-launch">
+            <i class="bi bi-shield-lock-fill me-2"></i>Sign in with Keycloak
+          </a>
+          <a href="#features" class="btn btn-outline-teal">
+            Learn more <i class="bi bi-arrow-down ms-1"></i>
+          </a>
+        </div>
+        <div class="mt-4 fade-up delay-4 d-flex gap-4">
+          <div>
+            <div style="font-size:1.4rem;font-weight:800;color:#fff;font-family:'Syne',sans-serif;">OIDC SSO</div>
+            <div style="font-size:0.78rem;color:var(--kc-muted);">PKCE Auth Flow</div>
+          </div>
+          <div style="width:1px;background:var(--kc-border);"></div>
+          <div>
+            <div style="font-size:1.4rem;font-weight:800;color:#fff;font-family:'Syne',sans-serif;">LangGraph</div>
+            <div style="font-size:0.78rem;color:var(--kc-muted);">Multi-step Agent</div>
+          </div>
+          <div style="width:1px;background:var(--kc-border);"></div>
+          <div>
+            <div style="font-size:1.4rem;font-weight:800;color:#fff;font-family:'Syne',sans-serif;">REST API</div>
+            <div style="font-size:0.78rem;color:var(--kc-muted);">Full Admin Coverage</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat preview -->
+      <div class="col-lg-6">
+        <div class="chat-preview fade-up delay-3">
+          <div class="chat-preview-bar">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+            <span class="ms-2 text-secondary" style="font-size:0.82rem;">KeycloakAI Chat</span>
+          </div>
+          <div class="chat-preview-body">
+            <div class="msg-bubble msg-user">
+              Create a user john.doe@acme.com with first name John, last name Doe, and set a temporary password "Welcome@123"
+            </div>
+            <div class="msg-bubble msg-ai">
+              <strong style="color:#fff;">✅ User created successfully</strong>
+              <div class="msg-code">
+POST /admin/realms/myrealm/users<br/>
+{<br/>
+&nbsp;&nbsp;"username": "john.doe",<br/>
+&nbsp;&nbsp;"email": "john.doe@acme.com",<br/>
+&nbsp;&nbsp;"firstName": "John",<br/>
+&nbsp;&nbsp;"lastName": "Doe",<br/>
+&nbsp;&nbsp;"enabled": true,<br/>
+&nbsp;&nbsp;"credentials": [{"type":"password",<br/>
+&nbsp;&nbsp;&nbsp;"value":"Welcome@123","temporary":true}]<br/>
+}
+              </div>
+              HTTP 201 Created
+            </div>
+            <div class="msg-bubble msg-user">
+              Now create an OpenID Connect client called my-react-app with redirect URI https://myapp.com/*
+            </div>
+            <div class="msg-bubble msg-ai" style="display:flex;gap:6px;align-items:center;">
+              <span>Processing</span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features" class="py-6" style="padding:96px 0;position:relative;z-index:1;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-label">Why KeycloakAI</div>
+      <h2 class="section-title">Built for security teams</h2>
+      <p class="text-secondary" style="max-width:520px;margin:0 auto;">
+        A complete AI-powered admin interface backed by real Keycloak Admin REST API calls — not simulated.
+      </p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+          <h5>Secure SSO Authentication</h5>
+          <p>Full OpenID Connect Authorization Code Flow with PKCE. No passwords stored — your session is managed via Keycloak tokens.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-robot"></i></div>
+          <h5>Claude-Powered Intent Engine</h5>
+          <p>Anthropic Claude parses your English instructions and extracts precise JSON payloads, automatically mapping to the correct API endpoint.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+          <h5>LangGraph Agent Pipeline</h5>
+          <p>Multi-step graph-based pipeline: Parse Intent → Execute API → Format Response. Stateful, observable, and extensible.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-lightning-charge"></i></div>
+          <h5>Full Admin REST API Coverage</h5>
+          <p>Users, clients, roles, groups, identity providers, client scopes, protocol mappers, realm settings — everything in one chat interface.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-eye"></i></div>
+          <h5>Transparent Operations</h5>
+          <p>Every operation shows you the exact API payload and HTTP response. You always know precisely what was sent to Keycloak.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-code-slash"></i></div>
+          <h5>Python 3.12 + FastAPI</h5>
+          <p>Production-grade async backend built with FastAPI, LangChain, LangGraph and Anthropic SDK. Easy to extend and deploy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Capabilities ── -->
+<section id="capabilities" style="padding:80px 0;background:rgba(255,255,255,0.02);border-top:1px solid var(--kc-border);border-bottom:1px solid var(--kc-border);position:relative;z-index:1;">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <div class="section-label">What you can do</div>
+        <h2 class="section-title">Full Keycloak<br/>management in chat</h2>
+        <p class="text-secondary" style="line-height:1.8;margin-bottom:2rem;">
+          Just describe your intent. KeycloakAI understands context, handles
+          edge cases, and confirms every operation with the API response.
+        </p>
+        <a href="/auth/login" class="btn btn-launch">Get started free</a>
+      </div>
+      <div class="col-lg-7">
+        <div class="d-flex flex-wrap gap-2">
+          <span class="cap-pill"><i class="bi bi-person-plus"></i> Create Users</span>
+          <span class="cap-pill"><i class="bi bi-person-gear"></i> Update Users</span>
+          <span class="cap-pill"><i class="bi bi-person-x"></i> Delete Users</span>
+          <span class="cap-pill"><i class="bi bi-key"></i> Reset Passwords</span>
+          <span class="cap-pill"><i class="bi bi-envelope-check"></i> Verify Emails</span>
+          <span class="cap-pill"><i class="bi bi-app"></i> Create Clients</span>
+          <span class="cap-pill"><i class="bi bi-app-indicator"></i> Update Clients</span>
+          <span class="cap-pill"><i class="bi bi-lock"></i> Client Secrets</span>
+          <span class="cap-pill"><i class="bi bi-tag"></i> Realm Roles</span>
+          <span class="cap-pill"><i class="bi bi-person-badge"></i> Assign Roles</span>
+          <span class="cap-pill"><i class="bi bi-people"></i> Groups</span>
+          <span class="cap-pill"><i class="bi bi-person-fill-add"></i> Group Members</span>
+          <span class="cap-pill"><i class="bi bi-google"></i> Google IDP</span>
+          <span class="cap-pill"><i class="bi bi-github"></i> GitHub IDP</span>
+          <span class="cap-pill"><i class="bi bi-microsoft"></i> OIDC/SAML IDPs</span>
+          <span class="cap-pill"><i class="bi bi-sliders"></i> Realm Settings</span>
+          <span class="cap-pill"><i class="bi bi-collection"></i> Client Scopes</span>
+          <span class="cap-pill"><i class="bi bi-map"></i> Protocol Mappers</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Tech Stack ── -->
+<section id="stack" style="padding:96px 0;position:relative;z-index:1;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-label">Technology</div>
+      <h2 class="section-title">Modern open-source stack</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-3">
+        <div class="stack-card">
+          <div class="stack-icon">🐍</div>
+          <div>
+            <h6>Python 3.12 + FastAPI</h6>
+            <p>Async web framework with full type safety</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="stack-card">
+          <div class="stack-icon">🤖</div>
+          <div>
+            <h6>LangChain + LangGraph</h6>
+            <p>Structured agent pipeline with stateful graph execution</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="stack-card">
+          <div class="stack-icon">✨</div>
+          <div>
+            <h6>Anthropic Claude</h6>
+            <p>Intent extraction & JSON payload generation</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="stack-card">
+          <div class="stack-icon">🔐</div>
+          <div>
+            <h6>Keycloak SSO</h6>
+            <p>OIDC PKCE auth + Admin REST API integration</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section style="padding:0 0 96px;position:relative;z-index:1;">
+  <div class="container">
+    <div class="cta-section">
+      <div class="section-label" style="justify-content:center;display:flex;">Ready to start?</div>
+      <h2 class="section-title" style="max-width:600px;margin:0 auto 1rem;">
+        Manage your realm with the power of AI
+      </h2>
+      <p class="text-secondary mb-4" style="max-width:480px;margin:0 auto 2rem;">
+        Sign in with your Keycloak account and start administering your realm through natural language.
+      </p>
+      <a href="/auth/login" class="btn btn-launch btn-lg">
+        <i class="bi bi-shield-lock-fill me-2"></i>Sign in with Keycloak SSO
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="py-4">
+  <div class="container d-flex flex-wrap justify-content-between align-items-center">
+    <div>
+      <span class="text-secondary">KeycloakAI</span> — Built with LangGraph, Claude & FastAPI
+    </div>
+    <div class="text-secondary">
+      Keycloak Admin REST API v25+ compatible
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

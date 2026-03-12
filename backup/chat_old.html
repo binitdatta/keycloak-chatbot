@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KeycloakAI — Admin Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --kc-teal: #00e5c3;
+      --kc-blue: #0a84ff;
+      --kc-dark: #080d14;
+      --kc-sidebar: #0a1020;
+      --kc-card: #0e1623;
+      --kc-input: #111c2d;
+      --kc-border: rgba(0,229,195,0.12);
+      --kc-border2: rgba(255,255,255,0.07);
+      --kc-muted: #4e6585;
+      --kc-text: #c8d8ea;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--kc-dark);
+      color: var(--kc-text);
+      display: flex; flex-direction: column;
+    }
+
+    h1,h2,h3,h4,h5,h6 { font-family: 'Syne', sans-serif; }
+
+    /* ── Layout ── */
+    .app-shell {
+      display: flex; height: 100vh; overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px; flex-shrink: 0;
+      background: var(--kc-sidebar);
+      border-right: 1px solid var(--kc-border2);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--kc-border2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.2rem; color: var(--kc-teal); letter-spacing: -0.5px;
+    }
+    .brand span { color: #fff; }
+    .sidebar-section {
+      padding: 16px 20px 8px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--kc-muted);
+    }
+    .example-btn {
+      display: block; width: 100%;
+      background: transparent; border: none;
+      text-align: left; padding: 8px 20px;
+      font-size: 0.82rem; color: var(--kc-text);
+      cursor: pointer; border-radius: 0;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1.4;
+    }
+    .example-btn:hover {
+      background: rgba(0,229,195,0.07);
+      color: var(--kc-teal);
+    }
+    .example-cat {
+      font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--kc-muted); padding: 12px 20px 4px;
+    }
+    .sidebar-footer {
+      margin-top: auto;
+      border-top: 1px solid var(--kc-border2);
+      padding: 16px 20px;
+    }
+    .user-badge {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .user-avatar {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--kc-teal), var(--kc-blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; color: #fff;
+      flex-shrink: 0;
+    }
+    .user-name { font-size: 0.88rem; font-weight: 600; color: #fff; }
+    .user-email { font-size: 0.73rem; color: var(--kc-muted); }
+
+    /* ── Main Chat ── */
+    .chat-main {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* ── Chat Header ── */
+    .chat-header {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--kc-border2);
+      background: rgba(8,13,20,0.8);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .realm-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0,229,195,0.1);
+      border: 1px solid rgba(0,229,195,0.25);
+      color: var(--kc-teal); font-size: 0.78rem; font-weight: 600;
+      padding: 4px 12px; border-radius: 999px;
+    }
+    .realm-badge .dot-live {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--kc-teal);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Messages ── */
+    .messages-area {
+      flex: 1; overflow-y: auto;
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 20px;
+      scroll-behavior: smooth;
+    }
+    .messages-area::-webkit-scrollbar { width: 4px; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--kc-border2); border-radius: 2px; }
+
+    .message-row {
+      display: flex; gap: 12px;
+      animation: msgIn 0.25s ease;
+    }
+    @keyframes msgIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .message-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; flex-shrink: 0; margin-top: 2px;
+    }
+    .msg-avatar.ai {
+      background: linear-gradient(135deg, #00e5c3, #0a84ff);
+      color: #fff;
+    }
+    .msg-avatar.user-av {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--kc-border2);
+      color: var(--kc-text);
+    }
+
+    .msg-content { max-width: 75%; }
+    .msg-label {
+      font-size: 0.72rem; color: var(--kc-muted);
+      margin-bottom: 4px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .message-row.user .msg-label { text-align: right; }
+
+    .msg-bubble {
+      border-radius: 16px; padding: 12px 16px;
+      font-size: 0.9rem; line-height: 1.65;
+    }
+    .msg-bubble.ai-bubble {
+      background: var(--kc-card);
+      border: 1px solid var(--kc-border2);
+      color: var(--kc-text);
+      border-top-left-radius: 4px;
+    }
+    .msg-bubble.user-bubble {
+      background: rgba(0,229,195,0.1);
+      border: 1px solid rgba(0,229,195,0.2);
+      color: #e0f5f2;
+      border-top-right-radius: 4px;
+    }
+
+    /* Markdown rendering inside AI bubbles */
+    .msg-bubble pre {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 12px 14px;
+      overflow-x: auto; margin: 10px 0 0; font-size: 0.78rem;
+    }
+    .msg-bubble code:not(pre code) {
+      background: rgba(0,229,195,0.12);
+      color: var(--kc-teal);
+      padding: 2px 6px; border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .msg-bubble strong { color: #fff; }
+    .msg-bubble hr { border-color: var(--kc-border2); margin: 10px 0; }
+
+    /* Operation details collapsible */
+    .op-details {
+      margin-top: 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--kc-border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .op-details-toggle {
+      padding: 8px 14px;
+      display: flex; align-items: center; gap: 6px;
+      cursor: pointer; font-size: 0.78rem;
+      color: var(--kc-teal); font-weight: 600;
+      user-select: none;
+      background: rgba(0,229,195,0.05);
+    }
+    .op-details-toggle:hover { background: rgba(0,229,195,0.1); }
+    .op-details-body {
+      display: none; padding: 12px 14px;
+      font-size: 0.76rem; font-family: 'Courier New', monospace;
+      color: #9ab; white-space: pre-wrap; overflow-x: auto;
+      border-top: 1px solid var(--kc-border);
+    }
+    .op-details-body.visible { display: block; }
+
+    /* Typing indicator */
+    .typing-bubble {
+      display: flex; align-items: center; gap: 5px;
+      padding: 12px 16px;
+    }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--kc-teal); opacity: 0.6;
+      animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+    /* Welcome screen */
+    .welcome-screen {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 40px;
+    }
+    .welcome-icon {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, rgba(0,229,195,0.15), rgba(10,132,255,0.15));
+      border: 1px solid var(--kc-border);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin-bottom: 20px;
+    }
+    .welcome-title { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .welcome-sub { font-size: 0.9rem; color: var(--kc-muted); max-width: 380px; line-height: 1.7; margin-bottom: 28px; }
+    .welcome-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .welcome-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--kc-border2);
+      border-radius: 8px; padding: 8px 14px;
+      font-size: 0.82rem; color: var(--kc-text);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .welcome-chip:hover { border-color: var(--kc-teal); color: var(--kc-teal); background: rgba(0,229,195,0.05); }
+
+    /* ── Input Area ── */
+    .input-area {
+      padding: 16px 24px 20px;
+      border-top: 1px solid var(--kc-border2);
+      background: rgba(8,13,20,0.95);
+      backdrop-filter: blur(12px);
+    }
+    .input-wrapper {
+      background: var(--kc-input);
+      border: 1px solid var(--kc-border2);
+      border-radius: 14px;
+      display: flex; align-items: flex-end; gap: 10px;
+      padding: 12px 14px;
+      transition: border-color 0.2s;
+    }
+    .input-wrapper:focus-within { border-color: rgba(0,229,195,0.4); }
+    #chat-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: #fff; font-family: 'DM Sans', sans-serif;
+      font-size: 0.92rem; resize: none; max-height: 140px;
+      line-height: 1.5;
+    }
+    #chat-input::placeholder { color: var(--kc-muted); }
+    .send-btn {
+      width: 36px; height: 36px;
+      background: var(--kc-teal); border: none; border-radius: 9px;
+      color: #080d14; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .send-btn:hover { background: #00ffdb; transform: scale(1.05); }
+    .send-btn:disabled { background: var(--kc-muted); cursor: not-allowed; transform: none; }
+
+    .input-hint {
+      font-size: 0.72rem; color: var(--kc-muted);
+      margin-top: 6px; text-align: center;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">KeycloakAI<span>.</span></div>
+      <a href="/static" class="text-secondary" style="font-size:0.8rem;text-decoration:none;">
+        <i class="bi bi-house"></i>
+      </a>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding-bottom:8px;">
+      <div class="sidebar-section">Example Prompts</div>
+      <div id="examples-list">
+        <div class="text-center py-3" style="color:var(--kc-muted);font-size:0.8rem;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar-initials">?</div>
+        <div style="min-width:0;">
+          <div class="user-name text-truncate" id="user-display-name">{{ user.name or user.username }}</div>
+          <div class="user-email text-truncate" id="user-display-email">{{ user.email or '' }}</div>
+        </div>
+        <a href="/auth/logout" class="ms-auto text-secondary" title="Logout">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Chat ── -->
+  <main class="chat-main">
+    <div class="chat-header">
+      <div class="d-flex align-items-center gap-3">
+        <div class="realm-badge">
+          <div class="dot-live"></div>
+          Realm: <strong>{{ keycloak_realm if keycloak_realm else 'master' }}</strong>
+        </div>
+        <span class="text-secondary" style="font-size:0.8rem;">Keycloak Admin Chat</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-secondary" id="clear-btn" title="Clear chat">
+          <i class="bi bi-trash3"></i>
+        </button>
+        <a href="/auth/logout" class="btn btn-sm btn-outline-secondary d-md-none">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Welcome / Messages -->
+    <div class="messages-area" id="messages-area">
+      <div class="welcome-screen" id="welcome-screen">
+        <div class="welcome-icon">🔐</div>
+        <div class="welcome-title">Keycloak Admin Assistant</div>
+        <div class="welcome-sub">
+          Describe what you want to do in plain English. I'll parse your intent,
+          build the JSON payload, and call the Keycloak Admin REST API.
+        </div>
+        <div class="welcome-chips" id="quick-chips">
+          <div class="welcome-chip" data-prompt="List all users in the realm">List all users</div>
+          <div class="welcome-chip" data-prompt="List all clients in the realm">List clients</div>
+          <div class="welcome-chip" data-prompt="List all identity providers">List IDPs</div>
+          <div class="welcome-chip" data-prompt="Get realm settings">Get realm info</div>
+          <div class="welcome-chip" data-prompt="List all realm roles">List roles</div>
+          <div class="welcome-chip" data-prompt="List all groups">List groups</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="chat-input"
+          placeholder="e.g. Create a user alice@example.com with first name Alice, last name Smith…"
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="send-btn" title="Send (Enter)">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+      <div class="input-hint">
+        <i class="bi bi-info-circle me-1"></i>
+        Press <strong>Enter</strong> to send · <strong>Shift+Enter</strong> for newline · Operations are executed against your live Keycloak realm
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+<script>
+  const messagesArea = document.getElementById('messages-area');
+  const welcomeScreen = document.getElementById('welcome-screen');
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  const clearBtn = document.getElementById('clear-btn');
+
+  let hasMessages = false;
+
+  // ── Load examples ──────────────────────────────────────────────────────────
+  async function loadExamples() {
+    try {
+      const res = await fetch('/api/examples');
+      const data = await res.json();
+      const list = document.getElementById('examples-list');
+      list.innerHTML = '';
+      let currentCat = '';
+      data.examples.forEach(ex => {
+        if (ex.category !== currentCat) {
+          currentCat = ex.category;
+          const cat = document.createElement('div');
+          cat.className = 'example-cat';
+          cat.textContent = ex.category;
+          list.appendChild(cat);
+        }
+        const btn = document.createElement('button');
+        btn.className = 'example-btn';
+        btn.textContent = ex.prompt;
+        btn.addEventListener('click', () => {
+          chatInput.value = ex.prompt;
+          chatInput.focus();
+          autoResize();
+        });
+        list.appendChild(btn);
+      });
+    } catch (e) {
+      console.error('Failed to load examples', e);
+    }
+  }
+
+  // ── Quick chip clicks ──────────────────────────────────────────────────────
+  document.querySelectorAll('.welcome-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chatInput.value = chip.dataset.prompt;
+      chatInput.focus();
+      autoResize();
+    });
+  });
+
+  // ── Auto-resize textarea ───────────────────────────────────────────────────
+  function autoResize() {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+  }
+  chatInput.addEventListener('input', autoResize);
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+  clearBtn.addEventListener('click', clearChat);
+
+  // ── Add message to DOM ─────────────────────────────────────────────────────
+  function addMessage(role, content, details = null) {
+    if (!hasMessages) {
+      welcomeScreen.remove();
+      hasMessages = true;
+    }
+
+    const row = document.createElement('div');
+    row.className = `message-row ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `msg-avatar ${role === 'ai' ? 'ai' : 'user-av'}`;
+    avatar.innerHTML = role === 'ai' ? '<i class="bi bi-robot"></i>' : '<i class="bi bi-person-fill"></i>';
+
+    const msgContent = document.createElement('div');
+    msgContent.className = 'msg-content';
+
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = role === 'ai' ? 'Keycloak AI' : 'You';
+
+    const bubble = document.createElement('div');
+    bubble.className = `msg-bubble ${role === 'ai' ? 'ai-bubble' : 'user-bubble'}`;
+
+    if (role === 'ai') {
+      bubble.innerHTML = marked.parse(content);
+    } else {
+      bubble.textContent = content;
+    }
+
+    // Operation details panel
+    if (details) {
+      const det = document.createElement('div');
+      det.className = 'op-details';
+      const toggle = document.createElement('div');
+      toggle.className = 'op-details-toggle';
+      toggle.innerHTML = '<i class="bi bi-code-slash"></i> View raw operation details';
+      const body = document.createElement('div');
+      body.className = 'op-details-body';
+      body.textContent = JSON.stringify(details, null, 2);
+      toggle.addEventListener('click', () => body.classList.toggle('visible'));
+      det.appendChild(toggle);
+      det.appendChild(body);
+      bubble.appendChild(det);
+    }
+
+    msgContent.appendChild(label);
+    msgContent.appendChild(bubble);
+    row.appendChild(avatar);
+    row.appendChild(msgContent);
+    messagesArea.appendChild(row);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+    return row;
+  }
+
+  // ── Typing indicator ───────────────────────────────────────────────────────
+  function addTypingIndicator() {
+    if (!hasMessages) { welcomeScreen.remove(); hasMessages = true; }
+    const row = document.createElement('div');
+    row.className = 'message-row ai';
+    row.id = 'typing-indicator';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar ai';
+    avatar.innerHTML = '<i class="bi bi-robot"></i>';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble ai-bubble typing-bubble';
+    bubble.innerHTML = `
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    `;
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    messagesArea.appendChild(row);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+    return row;
+  }
+
+  function removeTypingIndicator() {
+    document.getElementById('typing-indicator')?.remove();
+  }
+
+  // ── Send message ───────────────────────────────────────────────────────────
+  async function sendMessage() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    addMessage('user', msg);
+    const typing = addTypingIndicator();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg }),
+      });
+
+      removeTypingIndicator();
+
+      if (res.status === 401) {
+        addMessage('ai', '⚠️ Your session has expired. Please [sign in again](/) to continue.');
+        return;
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        addMessage('ai', `❌ **Server error ${res.status}:** ${err.detail || 'Unknown error'}`);
+        return;
+      }
+
+      const data = await res.json();
+
+      // Build details object
+      let details = null;
+      if (data.parsed || data.api_result) {
+        details = {};
+        if (data.parsed) details.parsed_intent = data.parsed;
+        if (data.api_result) details.api_result = data.api_result;
+      }
+
+      addMessage('ai', data.response, details);
+
+    } catch (err) {
+      removeTypingIndicator();
+      addMessage('ai', `❌ **Network error:** ${err.message}`);
+    } finally {
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  // ── Clear chat ─────────────────────────────────────────────────────────────
+  function clearChat() {
+    messagesArea.innerHTML = '';
+    hasMessages = false;
+
+    const welcome = document.createElement('div');
+    welcome.className = 'welcome-screen';
+    welcome.id = 'welcome-screen';
+    welcome.innerHTML = `
+      <div class="welcome-icon">🔐</div>
+      <div class="welcome-title">Keycloak Admin Assistant</div>
+      <div class="welcome-sub">
+        Describe what you want to do in plain English. I'll parse your intent,
+        build the JSON payload, and call the Keycloak Admin REST API.
+      </div>
+      <div class="welcome-chips">
+        <div class="welcome-chip" data-prompt="List all users in the realm">List all users</div>
+        <div class="welcome-chip" data-prompt="List all clients in the realm">List clients</div>
+        <div class="welcome-chip" data-prompt="List all identity providers">List IDPs</div>
+        <div class="welcome-chip" data-prompt="Get realm settings">Get realm info</div>
+        <div class="welcome-chip" data-prompt="List all realm roles">List roles</div>
+        <div class="welcome-chip" data-prompt="List all groups">List groups</div>
+      </div>
+    `;
+    welcome.querySelectorAll('.welcome-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chatInput.value = chip.dataset.prompt;
+        chatInput.focus();
+        autoResize();
+      });
+    });
+    messagesArea.appendChild(welcome);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  // Set user initials avatar
+  const displayName = document.getElementById('user-display-name')?.textContent?.trim() || '';
+  const initials = displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
+  const avatarEl = document.getElementById('user-avatar-initials');
+  if (avatarEl) avatarEl.textContent = initials;
+
+  loadExamples();
+  chatInput.focus();
+</script>
+</body>
+</html>
