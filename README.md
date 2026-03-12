@@ -347,10 +347,10 @@ KEYCLOAK_REALM=chatbot-test
 # Client authentication must be OFF — no client_secret is used
 KEYCLOAK_CLIENT_ID=keycloak-chatbot
 
-# master-realm admin credentials used by keycloak_client.py for ROPC token
-KEYCLOAK_ADMIN_CLIENT_ID=admin-cli
-KEYCLOAK_ADMIN_USERNAME=admin
-KEYCLOAK_ADMIN_PASSWORD=your-admin-password
+# Confidential client in master realm for Admin REST API (client credentials grant)
+# Service account must have realm-management → realm-admin role assigned
+KEYCLOAK_ADMIN_CLIENT_ID=keycloak-chatbot-backend
+KEYCLOAK_ADMIN_CLIENT_SECRET=your-client-secret-from-keycloak-credentials-tab
 
 # ── Anthropic ─────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY=sk-ant-...
@@ -406,8 +406,9 @@ APP_DEBUG=false
 2. **Email verified: ON**
 3. **Credentials tab** → set a non-temporary password
 
-> `admin-cli` in the `master` realm is used by `keycloak_client.py` for the
-> admin token. It is enabled by default — no additional setup required.
+> Create a confidential client `keycloak-chatbot-backend` in the `master` realm.
+> Enable Service accounts roles. Assign realm-management → realm-admin to its
+> service account. Copy the secret from the Credentials tab into .env.
 
 ---
 
